@@ -37,7 +37,6 @@ def ask_advanced_search():
   else:
     return [request, answer]
 
-    from wiki import article_metadata, ask_search, ask_advanced_search
     import datetime
     import time
     
@@ -295,9 +294,7 @@ def ask_advanced_search():
         display_result()
     
         import io
-        from search import display_result
         import sys
-        from wiki import BASIC, ADVANCED, ADVANCED_TO_QUESTION 
         
         def print_basic():
             """
@@ -342,9 +339,6 @@ def ask_advanced_search():
             sys.stdout = old_stdout
             return output # return printed statements in student-run code
             
-            from search import keyword_to_titles, title_to_info, search, article_length,key_by_author, filter_to_author, filter_out, articles_from_year
-            from search_tests_helper import get_print, print_basic, print_advanced, print_advanced_option
-            from wiki import article_metadata
             from unittest.mock import patch
             from unittest import TestCase, main
             
