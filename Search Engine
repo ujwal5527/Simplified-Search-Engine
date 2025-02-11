@@ -36,3 +36,766 @@ def ask_advanced_search():
     return [request, int(answer)]
   else:
     return [request, answer]
+
+    from wiki import article_metadata, ask_search, ask_advanced_search
+    import datetime
+    import time
+    
+    # FOR ALL OF THESE FUNCTIONS, READ THE FULL INSTRUCTIONS.
+    
+    # 1) 
+    #
+    # Function: keyword_to_titles
+    #
+    # Parameters:
+    #   metadata - 2D list of article metadata containing 
+    #              [title, author, timestamp, article length, keywords]
+    #              for each article
+    #
+    # Return: dictionary mapping keyword to list of article titles in which the
+    #         articles contain keyword
+    #
+    # Example return value:
+    # {
+    #   'keyword': ['article title', 'article title 2']
+    #   'another_keyword': ['article title 2', 'article title 3']
+    # }
+    def keyword_to_titles(metadata):
+        
+        keyword_hash_map = {}
+    
+        for row in metadata:
+            if row:
+                for keywords in row[-1]:
+                    keyword_hash_map[keywords] = keyword_hash_map.get(keywords, []) + [row[0]]
+    
+        return keyword_hash_map
+    
+    
+    
+    # 2) 
+    #
+    # Function: title_to_info
+    #
+    # Parameters:
+    #   metadata - 2D list of article metadata containing 
+    #              [title, author, timestamp, article length, keywords]
+    #              for each article
+    #
+    # Return: dictionary mapping article title to a dictionary with the following
+    #         keys: author, timestamp, length of article. It may be assumed that
+    #         the input data has unique article titles.
+    #
+    # Example return value:
+    # {
+    #   'article title': {'author': 'some author', 'timestamp': 1234567890, 'length': 2491}
+    #   'article title 2': {'author': 'another author', 'timestamp': 9876543210, 'length': 85761}
+    # }
+    
+    def title_to_info(metadata):
+        
+        title_hash_map = {}
+    
+        for row in metadata:
+    
+            if row:
+                details = {}
+                details['author'] = row[1] 
+                details['timestamp'] = row[2]
+                details['length'] = row[3]
+                title_hash_map[row[0]] = details
+    
+        return title_hash_map
+    
+    
+    # 3) 
+    #
+    # Function: search
+    #
+    # Parameters:
+    #   keyword - search word to look for
+    #   keyword_to_titles - dictionary mapping keyword to a list of all article
+    #                       titles containing that keyword
+    #
+    # Return: list of titles with articles containing the keyword, case-sensitive
+    #         or an empty list if none are found
+    def search(keyword, keyword_to_titles):
+    
+        if keyword and (keyword in keyword_to_titles):
+                return keyword_to_titles[keyword]
+        return []
+    
+    
+    
+    
+    '''
+    Functions 4-8 are called after searching for a list of articles containing the user's keyword.
+    '''
+    # 4) 
+    #
+    # Function: article_length
+    #
+    # Parameters:
+    #   max_length - max character length of articles
+    #   article_titles - list of article titles resulting from basic search
+    #   title_to_info - dictionary mapping article title to a dictionary with the 
+    #                   following keys: author, timestamp, length of article
+    #
+    # Return: list of article titles from given titles for articles that do not
+    #         exceed max_length number of characters
+    
+    def article_length(max_length, article_titles, title_to_info):
+    
+        list_of_article_titles = []
+        for title in article_titles:
+            if title_to_info[title]['length'] <= max_length:
+                list_of_article_titles.append(title)
+    
+        return list_of_article_titles
+    
+    
+    
+    # 5) 
+    #
+    # Function: key_by_author
+    #
+    # Parameters:
+    #   article_titles - list of article titles resulting from basic search
+    #   title_to_info - dictionary mapping article title to a dictionary with the 
+    #                   following keys: author, timestamp, length of article
+    #
+    # Return: dictionary that maps author to a list of all articles titles written
+    #         by that author
+    #
+    # Example return value:
+    # {
+    #   'author': ['article title', 'article title 2'],
+    #   'another author': ['article title 3']
+    # }
+    def key_by_author(article_titles, title_to_info):
+        author_dictionary = {}
+    
+        for title in article_titles:
+            author = title_to_info[title]['author']
+            author_dictionary[author] = author_dictionary.get(author,[]) + [title]
+    
+        return author_dictionary
+    
+    # 6) 
+    #
+    # Function: filter_to_author
+    #
+    # Parameters:
+    #   author - author name to filter results to
+    #   article_titles - list of article titles resulting from basic search
+    #   title_to_info - dictionary mapping article title to a dictionary with the 
+    #                   following keys: author, timestamp, length of article
+    #
+    # Return: list of article titles from the initial search written by the author
+    #         or an empty list if none.
+    
+    def filter_to_author(author, article_titles, title_to_info):
+        filtered_titles = []
+        for title in article_titles:
+            if title_to_info[title]['author'] == author:
+                filtered_titles.append(title)
+        return filtered_titles 
+    
+    
+    
+    
+    # 7) 
+    #
+    # Function: filter_out
+    #
+    # Parameters:
+    #   keyword - a second keyword to use to filter out results
+    #   article_titles - list of article titles resulting from basic search
+    #   keyword_to_titles - dictionary mapping keyword to a list of all article
+    #                       titles containing that keyword
+    #
+    # Return: list of articles from the basic search that do not include the
+    #         new keyword
+    
+    def filter_out(keyword, article_titles, keyword_to_titles):
+        filtered_titles = []
+        excluded_titles = set(keyword_to_titles.get(keyword, []))
+        for title in article_titles:
+            if title not in excluded_titles:
+                filtered_titles.append(title)
+        return filtered_titles
+    
+    
+    # 8) 
+    #
+    # Function: articles_from_year
+    #
+    # Parameters:
+    #   year - year (ex: 2009) to filter articles to
+    #   article_titles - list of article titles resulting from basic search
+    #   title_to_info - dictionary mapping article title to a dictionary with the 
+    #                   following keys: author, timestamp, length of article
+    #
+    # Return: list of article titles from the basic search that were published
+    #         during the provided year.
+    
+    def articles_from_year(year, article_titles, title_to_info):
+        filtered_titles = []
+        for title in article_titles:
+    
+            timestamp = title_to_info[title]['timestamp']
+            article_year = datetime.datetime.fromtimestamp(timestamp).year
+            if article_year == year:
+                filtered_titles.append(title)
+                
+        return filtered_titles
+    
+    
+    # Prints out articles based on searched keyword and advanced options
+    def display_result():
+        # Preprocess all metadata to dictionaries
+        keyword_to_titles_dict = keyword_to_titles(article_metadata())
+        title_to_info_dict = title_to_info(article_metadata())
+        
+        # Stores list of articles returned from searching user's keyword
+        articles = search(ask_search(), keyword_to_titles_dict)
+    
+        # advanced stores user's chosen advanced option (1-7)
+        # value stores user's response in being asked the advanced option
+        advanced, value = ask_advanced_search()
+    
+        if advanced == 1:
+            # value stores max length of articles
+            # Update articles to contain only ones not exceeding the maximum length
+            articles = article_length(value, articles, title_to_info_dict)
+        if advanced == 2:
+            # Update articles to be a dictionary keyed by author
+            articles = key_by_author(articles, title_to_info_dict)
+        elif advanced == 3:
+            # value stores author name
+            # Update article metadata to only contain titles and timestamps
+            articles = filter_to_author(value, articles, title_to_info_dict)
+        elif advanced == 4:
+            # value stores a second keyword
+            # Filter articles to exclude those containing the new keyword.
+            articles = filter_out(value, articles, keyword_to_titles_dict)
+        elif advanced == 5:
+            # value stores year as an int
+            # Update article metadata to contain only articles from that year
+            articles = articles_from_year(value, articles, title_to_info_dict)
+    
+        print()
+    
+        if not articles:
+            print("No articles found")
+        else:
+            print("Here are your articles: " + str(articles))
+    
+    if __name__ == "__main__":
+        display_result()
+    
+        import io
+        from search import display_result
+        import sys
+        from wiki import BASIC, ADVANCED, ADVANCED_TO_QUESTION 
+        
+        def print_basic():
+            """
+            Returns string to ask user for basic search keyword
+            """
+            return BASIC
+        
+        def print_advanced():
+            """
+            Returns string to ask user for advanced search option
+            """
+            return ADVANCED
+        
+        def print_advanced_option(option):
+            """
+            Returns string to ask user for advanced search question
+            """
+            return ADVANCED_TO_QUESTION[option]
+        
+        def _print_value(question, answer):
+            print(question + answer)
+            return answer
+        
+        def get_print(input_mock, answers):
+            """
+            Mocks input and runs function with provided answers
+        
+            Args:
+              input_mock - patched bultins.input()
+              answers - desired input for builtins.input()
+            """
+            answers.reverse() # reverses answers so can pop off list
+            input_mock.side_effect = \
+                lambda question: _print_value(question, str(answers.pop())) # print input question along with given answer
+        
+            # Save printed output into variable so can return it to compare in test
+            old_stdout = sys.stdout
+            new_stdout = io.StringIO()
+            sys.stdout = new_stdout
+            display_result()
+            output = new_stdout.getvalue()
+            sys.stdout = old_stdout
+            return output # return printed statements in student-run code
+            
+            from search import keyword_to_titles, title_to_info, search, article_length,key_by_author, filter_to_author, filter_out, articles_from_year
+            from search_tests_helper import get_print, print_basic, print_advanced, print_advanced_option
+            from wiki import article_metadata
+            from unittest.mock import patch
+            from unittest import TestCase, main
+            
+            class TestSearch(TestCase):
+            
+                ##############
+                # UNIT TESTS #
+                ##############
+            
+                # def test_example_unit_test(self):
+                #     dummy_keyword_dict = {
+                #         'cat': ['title1', 'title2', 'title3'],
+                #         'dog': ['title3', 'title4']
+                #     }
+                #     expected_search_results = ['title3', 'title4']
+                #     self.assertEqual(search('dog', dummy_keyword_dict), expected_search_results)
+            
+                
+                def test_keyword_to_titles(self):
+                    # Test with empty metadata - should return an empty dictionary
+                    dummy_metadata = []
+                    expected_result = {}
+                    self.assertEqual(keyword_to_titles(dummy_metadata), expected_result)
+            
+                    dummy_metadata = [[], [], []]
+                    expected_result = {}
+                    self.assertEqual(keyword_to_titles(dummy_metadata), expected_result)
+            
+                    # Test with valid metadata containing distinct and overlapping keywords
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 4144, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    expected_result = {
+                        'beach': ['Spain national beach soccer team'],
+                        'soccer': ['Spain national beach soccer team'],
+                        'fifa': ['Spain national beach soccer team'],
+                        'award': ['Spain national beach soccer team', 'Ken Kennedy (computer scientist)'],
+                        'kennedy': ['Ken Kennedy (computer scientist)'],
+                        'was': ['Ken Kennedy (computer scientist)'],
+                        'computer': ['Ken Kennedy (computer scientist)'],
+                        'and': ['Ken Kennedy (computer scientist)'],
+                        'the': ['Ken Kennedy (computer scientist)'],
+                        'for': ['Ken Kennedy (computer scientist)']
+                    }
+                    self.assertEqual(keyword_to_titles(dummy_metadata), expected_result)
+            
+                    # Test with metadata having identical keywords for multiple titles
+                    dummy_metadata = [
+                        ["Semaphore (programming)", "Nihonjoe", 1144850850, 7616, ["test keyword only"]],
+                        ["Wake Forest Demon Deacons men's soccer", "Burna Boy", 1260577388, 26745, ["test keyword only"]]
+                    ]
+                    expected_result = {
+                        'test keyword only': ["Semaphore (programming)", "Wake Forest Demon Deacons men's soccer"]
+                    }
+                    self.assertEqual(keyword_to_titles(dummy_metadata), expected_result)
+            
+            
+            
+                def test_title_to_info(self):
+                    # Test with empty metadata - should return an empty dictionary
+                    dummy_metadata = []
+                    expected_result = {}
+                    self.assertEqual(title_to_info(dummy_metadata), expected_result)
+            
+                    dummy_metadata = [[], [], []]
+                    expected_result = {}
+                    self.assertEqual(title_to_info(dummy_metadata), expected_result)
+            
+                    # Test with valid metadata - ensures each title maps to its corresponding info
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 4144, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']],
+                        ["Semaphore (programming)", "Nihonjoe", 1144850850, 7616, ["test keyword only"]]
+                    ]
+                    expected_result = {
+                        'Spai national beach soccer team': {'author': 'jack johnson', 'timestamp': 1233458894, 'length': 1526},
+                        'Ken Kennedy (computer scientist)': {'author': 'Mack Johnson', 'timestamp': 1246308670, 'length': 4144},
+                        "Semaphore (programming)": {'author': 'Nihonjoe', 'timestamp': 1144850850, 'length': 7616}
+                    }
+                    self.assertEqual(title_to_info(dummy_metadata), expected_result)
+            
+            
+            
+                def test_search(self):
+                    # Test with a keyword that matches an entry in the data
+                    dummy_data = {
+                        'beach': ['Spain national beach soccer team'],
+                        'fifa': ['Real Madrid', 'Barcelona'],
+                        'award': ['Spain national beach soccer team', 'Ken Kennedy (computer scientist)'],
+                        'kennedy': ['Ken Kennedy (computer scientist)']
+                    }
+                    expected_result = ['Spain national beach soccer team', 'Ken Kennedy (computer scientist)']
+                    self.assertEqual(search('award', dummy_data), expected_result)
+            
+                    # Test with a keyword in a different case - should return an empty result (case-sensitive)
+                    dummy_data = {
+                        'beach': ['Spain national beach soccer team'],
+                        'fifa': ['Real Madrid', 'Barcelona'],
+                        'award': ['Spain national beach soccer team', 'Ken Kennedy (computer scientist)'],
+                        'kennedy': ['Ken Kennedy (computer scientist)']
+                    }
+                    expected_result = []
+                    self.assertEqual(search('Beach', dummy_data), expected_result)
+            
+                    # Test with an empty keyword - should return an empty result
+                    dummy_data = {
+                        'beach': ['Spain national beach soccer team'],
+                        'fifa': ['Real Madrid', 'Barcelona'],
+                        'award': ['Spain national beach soccer team', 'Ken Kennedy (computer scientist)'],
+                        'kennedy': ['Ken Kennedy (computer scientist)']
+                    }
+                    expected_result = []
+                    self.assertEqual(search('', dummy_data), expected_result)
+            
+                    # Test with a keyword that does not exist in the data - should return an empty result
+                    dummy_data = {
+                        'beach': ['Spain national beach soccer team'],
+                        'fifa': ['Real Madrid', 'Barcelona'],
+                        'award': ['Spain national beach soccer team', 'Ken Kennedy (computer scientist)'],
+                        'kennedy': ['Ken Kennedy (computer scientist)']
+                    }
+                    expected_result = []
+                    self.assertEqual(search('Viral', dummy_data), expected_result)
+            
+            
+                
+            
+                def test_article_length(self):
+                    # Test with articles matching a keyword and exceeding a specified length
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'jack johnson', 1233458894, 4144, ['football', 'award']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('award', keyword_to_titles(dummy_metadata))
+                    expected_result = ['Spain national beach soccer team', 'Ken Kennedy (computer scientist)']
+                    self.assertEqual(article_length(2000, dummy_article_titles, title_to_info(dummy_metadata)), expected_result)
+            
+                    # Test with no articles matching a non-existent keyword
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'jack johnson', 1233458894, 4144, ['football', 'award']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('Viral', keyword_to_titles(dummy_metadata))
+                    expected_result = []
+                    self.assertEqual(article_length(2000, dummy_article_titles, title_to_info(dummy_metadata)), expected_result)
+            
+                    # Test with articles matching a keyword but none exceeding a smaller specified length
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'jack johnson', 1233458894, 4144, ['football', 'award']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('award', keyword_to_titles(dummy_metadata))
+                    expected_result = []
+                    self.assertEqual(article_length(1000, dummy_article_titles, title_to_info(dummy_metadata)), expected_result)
+            
+            
+                    
+            
+            
+            def test_key_by_author(self):
+                    # Test with articles matching a keyword and grouped by author
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'jack johnson', 1233458894, 4144, ['football']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('award', keyword_to_titles(dummy_metadata))
+                    expected_result = {
+                        'jack johnson': ['Spain national beach soccer team'],
+                        'Mack Johnson': ['Ken Kennedy (computer scientist)']
+                    }
+                    self.assertEqual(key_by_author(dummy_article_titles, title_to_info(dummy_metadata)), expected_result)
+            
+                    # Test with no articles matching a keyword due to case sensitivity
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'jack johnson', 1233458894, 4144, ['football']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('Award', keyword_to_titles(dummy_metadata))
+                    expected_result = {}
+                    self.assertEqual(key_by_author(dummy_article_titles, title_to_info(dummy_metadata)), expected_result)
+            
+                    # Test with articles matching a keyword, including multiple titles for an author
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'jack johnson', 1233458894, 4144, ['football', 'award']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('award', keyword_to_titles(dummy_metadata))
+                    expected_result = {
+                        'jack johnson': ['Spain national beach soccer team', 'German national beach soccer team'],
+                        'Mack Johnson': ['Ken Kennedy (computer scientist)']
+                    }
+                    self.assertEqual(key_by_author(dummy_article_titles, title_to_info(dummy_metadata)), expected_result)
+            
+            
+            
+            
+              def test_filter_to_author(self):
+                    # Test filtering articles by author with matching articles for a keyword
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'Rack johnson', 1233458894, 4144, ['soccer']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('soccer', keyword_to_titles(dummy_metadata))
+                    expected_result = ['Spain national beach soccer team']
+                    self.assertEqual(filter_to_author('jack johnson', dummy_article_titles, title_to_info(dummy_metadata)), expected_result)
+            
+                    # Test filtering articles by author with no case-sensitive match
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'Rack johnson', 1233458894, 4144, ['soccer']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('soccer', keyword_to_titles(dummy_metadata))
+                    expected_result = []
+                    self.assertEqual(filter_to_author('Jack johnson', dummy_article_titles, title_to_info(dummy_metadata)), expected_result)
+            
+                    # Test filtering articles by author when no articles match the keyword
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'Rack johnson', 1233458894, 4144, ['soccer']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('viral', keyword_to_titles(dummy_metadata))
+                    expected_result = []
+                    self.assertEqual(filter_to_author('jack johnson', dummy_article_titles, title_to_info(dummy_metadata)), expected_result)
+            
+            
+            
+               def test_filter_out(self):
+                    # Test filtering out articles with a specific keyword ('award') from the search results
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'Rack johnson', 1233458894, 4144, ['soccer']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('soccer', keyword_to_titles(dummy_metadata))
+                    expected_result = ['German national beach soccer team']
+                    self.assertEqual(filter_out('award', dummy_article_titles, keyword_to_titles(dummy_metadata)), expected_result)
+            
+                    # Test when all matching articles contain the keyword ('award'), resulting in an empty list
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'Rack johnson', 1233458894, 4144, ['soccer', 'award']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('soccer', keyword_to_titles(dummy_metadata))
+                    expected_result = []
+                    self.assertEqual(filter_out('award', dummy_article_titles, keyword_to_titles(dummy_metadata)), expected_result)
+            
+                    # Test filtering out with an empty keyword, keeping all articles matching the initial search
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'Rack johnson', 1233458894, 4144, ['soccer']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('soccer', keyword_to_titles(dummy_metadata))
+                    expected_result = ['Spain national beach soccer team', 'German national beach soccer team']
+                    self.assertEqual(filter_out('', dummy_article_titles, keyword_to_titles(dummy_metadata)), expected_result)
+            
+                    # Test filtering out with a keyword ('Pele') that does not appear in the data
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'Rack johnson', 1233458894, 4144, ['soccer']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('soccer', keyword_to_titles(dummy_metadata))
+                    expected_result = ['Spain national beach soccer team', 'German national beach soccer team']
+                    self.assertEqual(filter_out('Pele', dummy_article_titles, keyword_to_titles(dummy_metadata)), expected_result)
+            
+            
+                
+                def test_articles_from_year(self):
+                    # Test when no articles match the specified year (2024)
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'Rack johnson', 1233458894, 4144, ['soccer', 'award']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('soccer', keyword_to_titles(dummy_metadata))
+                    expected_result = []
+                    self.assertEqual(articles_from_year(2024, dummy_article_titles, title_to_info(dummy_metadata)), expected_result)
+            
+                    # Test when one article matches the specified year (2009)
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'Rack johnson', 133345889, 4144, ['soccer', 'award']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('soccer', keyword_to_titles(dummy_metadata))
+                    expected_result = ['Spain national beach soccer team']
+                    self.assertEqual(articles_from_year(2009, dummy_article_titles, title_to_info(dummy_metadata)), expected_result)
+            
+                    # Test when multiple articles match the specified year (2009)
+                    dummy_metadata = [
+                        ['Spain national beach soccer team', 'jack johnson', 1233458894, 1526, ['beach', 'soccer', 'fifa', 'award']],
+                        ['German national beach soccer team', 'Rack johnson', 1133458890, 4144, ['soccer', 'award']],
+                        ['Ken Kennedy (computer scientist)', 'Mack Johnson', 1246308670, 1300, ['kennedy', 'was', 'computer', 'and', 'the', 'for', 'award']]
+                    ]
+                    dummy_article_titles = search('award', keyword_to_titles(dummy_metadata))
+                    expected_result = ['Spain national beach soccer team', 'Ken Kennedy (computer scientist)']
+                    self.assertEqual(articles_from_year(2009, dummy_article_titles, title_to_info(dummy_metadata)), expected_result)
+            
+            
+            
+                #####################
+                # INTEGRATION TESTS #
+                #####################
+            
+                # @patch('builtins.input')
+                # def test_example_integration_test(self, input_mock):
+                #     keyword = 'soccer'
+                #     advanced_option = 5
+                #     advanced_response = 2009
+            
+                #     output = get_print(input_mock, [keyword, advanced_option, advanced_response])
+                #     expected = print_basic() + keyword + '\n' + print_advanced() + str(advanced_option) + '\n' + print_advanced_option(advanced_option) + str(advanced_response) + "\n\nHere are your articles: ['Spain national beach soccer team', 'Steven Cohen (soccer)']\n"
+            
+                #     self.assertEqual(output, expected)
+            
+                
+                @patch('builtins.input')
+                def test_award_keyword_articles_0_length(self, input_mock):
+                    keyword = 'award'
+                    advanced_option = 1
+                    advanced_response = 0
+            
+                    # Call function with mocked inputs and check output against expected result
+                    output = get_print(input_mock, [keyword, advanced_option, advanced_response])
+                    expected = print_basic() + keyword + '\n' + print_advanced() + str(advanced_option) + '\n' + print_advanced_option(advanced_option) + str(advanced_response) + "\n\nNo articles found\n"
+                    self.assertEqual(output, expected
+                    )
+            
+            
+                @patch('builtins.input')
+                def test_award_keyword_articles_key_by_author(self, input_mock):
+                    keyword = 'award'
+                    advanced_option = 2
+            
+                    # Call function with mocked inputs and verify output matches expected result with articles grouped by author
+                    output = get_print(input_mock, [keyword, advanced_option])
+                    expected = print_basic() + keyword + '\n' + print_advanced() + str(advanced_option) + '\n' + print_advanced_option(advanced_option) + "\nHere are your articles: {'Mack Johnson': ['Ken Kennedy (computer scientist)'], 'Nihonjoe': ['The Hunchback of Notre Dame (musical)']}\n"
+                    self.assertEqual(output, expected)
+            
+                @patch('builtins.input')
+                def test_no_award_keyword_articles_key_by_author(self, input_mock):
+                    keyword = 'Award'
+                    advanced_option = 2
+            
+                    # Call function with mocked inputs and verify output matches expected result when no articles are found for the given keyword
+            
+                    output = get_print(input_mock, [keyword, advanced_option])
+                    expected = print_basic() + keyword + '\n' + print_advanced() + str(advanced_option) + '\n' + print_advanced_option(advanced_option) + "\nNo articles found\n"
+                    self.assertEqual(output, expected)
+            
+                @patch('builtins.input')
+                def test_award_keyword_articles_filter_to_author(self, input_mock):
+                    keyword = 'award'
+                    advanced_option = 3
+                    advanced_response = 'Mack Johnson'
+            # Call function with mocked inputs and verify output matches expected result when filtering articles by author
+                   output = get_print(input_mock, [keyword, advanced_option, advanced_response])
+                    expected = print_basic() + keyword + '\n' + print_advanced() + str(advanced_option) + '\n' + print_advanced_option(advanced_option) + str(advanced_response) + "\n\nHere are your articles: ['Ken Kennedy (computer scientist)']\n"
+                    self.assertEqual(output, expected)
+            
+                @patch('builtins.input')
+                def test_no_award_keyword_articles_filter_to_author(self, input_mock):
+                    keyword = 'award'
+                    advanced_option = 3
+                    advanced_response = 'jack Johnson'
+            
+            # Call function with mocked inputs and verify output matches expected result when no articles are found for the given author
+                    output = get_print(input_mock, [keyword, advanced_option, advanced_response])
+                    expected = print_basic() + keyword + '\n' + print_advanced() + str(advanced_option) + '\n' + print_advanced_option(advanced_option) + str(advanced_response) + "\n\nNo articles found\n"
+                    self.assertEqual(output, expected)
+            
+                @patch('builtins.input')
+                def test_award_keyword_articles_filter_out_dog(self, input_mock):
+                    keyword = 'award'
+                    advanced_option = 4
+                    advanced_response = 'dog'
+            
+                # Mock user input and test the case where articles are filtered out based on a specific keyword (e.g., 'dog') 
+            # and ensure the correct remaining articles are displayed.
+            
+            
+                    output = get_print(input_mock, [keyword, advanced_option, advanced_response])
+                    expected = print_basic() + keyword + '\n' + print_advanced() + str(advanced_option) + '\n' + print_advanced_option(advanced_option) + str(advanced_response) + "\n\nHere are your articles: ['Ken Kennedy (computer scientist)', 'The Hunchback of Notre Dame (musical)']\n"
+                    self.assertEqual(output, expected)
+            
+                @patch('builtins.input')
+                def test_award_keyword_articles_filter_out_computer(self, input_mock):
+                    keyword = 'award'
+                    advanced_option = 4
+                    advanced_response = 'computer'
+            # Mock user input and test the case where articles are filtered out based on a specific keyword (e.g., 'computer') 
+            # and verify the correct remaining articles are shown.
+            
+            
+            
+                    output = get_print(input_mock, [keyword, advanced_option, advanced_response])
+                    expected = print_basic() + keyword + '\n' + print_advanced() + str(advanced_option) + '\n' + print_advanced_option(advanced_option) + str(advanced_response) + "\n\nHere are your articles: ['The Hunchback of Notre Dame (musical)']\n"
+                    self.assertEqual(output, expected)
+            
+                @patch('builtins.input')
+                def test_award_keyword_articles_from_2009(self, input_mock):
+                    keyword = 'award'
+                    advanced_option = 5
+                    advanced_response = 2009
+            
+            # Mock user input and test the case where articles are filtered based on the year (e.g., 2009) 
+            # and verify the correct articles from that year are displayed.
+                    output = get_print(input_mock, [keyword, advanced_option, advanced_response])
+                    expected = print_basic() + keyword + '\n' + print_advanced() + str(advanced_option) + '\n' + print_advanced_option(advanced_option) + str(advanced_response) + "\n\nHere are your articles: ['Ken Kennedy (computer scientist)']\n"
+                    self.assertEqual(output, expected)
+            
+                @patch('builtins.input')
+                def test_basic_search_award(self, input_mock):
+                    keyword = 'award'
+                    advanced_option = 6
+            
+            # Mock user input to perform a basic search for the keyword "award" and verify the output displays the correct articles.
+            
+                    output = get_print(input_mock, [keyword, advanced_option])
+                    expected = print_basic() + keyword + '\n' + print_advanced() + str(advanced_option) + '\n' + print_advanced_option(advanced_option) + "\nHere are your articles: ['Ken Kennedy (computer scientist)', 'The Hunchback of Notre Dame (musical)']\n"
+                    self.assertEqual(output, expected)
+            
+                @patch('builtins.input')
+                def test_basic_search_Award(self, input_mock):
+                    keyword = 'Award'
+                    advanced_option = 6
+            # Mock user input to perform a basic search for the keyword "Award" and verify that no articles are found due to case sensitivity.
+            
+            
+            
+                    output = get_print(input_mock, [keyword, advanced_option])
+                    expected = print_basic() + keyword + '\n' + print_advanced() + str(advanced_option) + '\n' + print_advanced_option(advanced_option) + "\nNo articles found\n"
+                    self.assertEqual(output, expected)
+            
+            
+                
+            
+            # Write tests above this line. Do not remove.
+            if __name__ == "__main__":
+                main()
+            
+            
